@@ -1,6 +1,13 @@
 #!/bin/zsh --no-rcs
 label="" # if no label is sent to the script, this will be used
 
+
+##########################################
+# Installomator v.10.7
+# Modified slightly for Scalepoint
+# 31/01/2025, Michael Madsen
+##########################################
+
 # Installomator
 #
 # Downloads and installs Applications
@@ -29,7 +36,7 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 DEBUG=1
 
 # notify behavior
-NOTIFY=success
+NOTIFY=all
 # options:
 #   - success      notify the user on success
 #   - silent       no notifications
@@ -46,7 +53,7 @@ PROMPT_TIMEOUT=86400
 
 # behavior when blocking processes are found
 # BLOCKING_PROCESS_ACTION is ignored if app label uses updateTool
-BLOCKING_PROCESS_ACTION=tell_user
+BLOCKING_PROCESS_ACTION=prompt_user
 # options:
 #   - ignore       continue even when blocking processes are found
 #   - quit         app will be told to quit nicely if running
@@ -83,7 +90,7 @@ BLOCKING_PROCESS_ACTION=tell_user
 
 
 # logo-icon used in dialog boxes if app is blocking
-LOGO=appstore
+LOGO="/Library/Application Support/Scalepoint/Resources/SP_logo_circle_512.icns"
 # options:
 #   - appstore      Icon is Apple App Store (default)
 #   - jamf          JAMF Pro

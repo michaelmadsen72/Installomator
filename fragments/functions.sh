@@ -50,7 +50,7 @@ reloadAsUser() {
 displaydialog() { # $1: message $2: title
     message=${1:-"Message"}
     title=${2:-"Installomator"}
-    runAsUser osascript -e "button returned of (display dialog \"$message\" with  title \"$title\" buttons {\"Not Now\", \"Quit and Update\"} default button \"Quit and Update\" with icon POSIX file \"$LOGO\" giving up after $PROMPT_TIMEOUT)"
+    runAsUser osascript -e "button returned of (display dialog \"$message\" with  title \"$title\" buttons {\"Not Now\", \"Quit and Update\"} default button \"Not Now\" with icon POSIX file \"$LOGO\" giving up after $PROMPT_TIMEOUT)"
 }
 
 displaydialogContinue() { # $1: message $2: title
@@ -62,11 +62,22 @@ displaydialogContinue() { # $1: message $2: title
 displaynotification() { # $1: message $2: title
     message=${1:-"Message"}
     title=${2:-"Notification"}
+    notification="/Applications/Utilities/ScalepointNotification.app/Contents/MacOS/ScalepointNotification"
     manageaction="/Library/Application Support/JAMF/bin/Management Action.app/Contents/MacOS/Management Action"
     hubcli="/usr/local/bin/hubcli"
     swiftdialog="/usr/local/bin/dialog"
 
-    if [[ "$($swiftdialog --version | cut -d "." -f1)" -ge 2 && "$NOTIFY_DIALOG" -eq 1 ]]; then
+    # MIM: No notification if DEPNotify is running
+    pgrep -x DEPNotify >/dev/null
+    if [ $? -eq 0 ]
+    then
+        echo "DEPNotify is running - no notifications!"
+        return
+    fi
+
+    if [[ -x "$notification" ]]; then
+        runAsUser "$notification" "$message" "$title"
+    elif [[ "$($swiftdialog --version | cut -d "." -f1)" -ge 2 && "$NOTIFY_DIALOG" -eq 1 ]]; then
         "$swiftdialog" --notification --title "$title" --message "$message"
     elif [[ -x "$manageaction" ]]; then
          "$manageaction" -message "$message" -title "$title" &
@@ -347,8 +358,9 @@ checkRunningProcesses() {
                     prompt_user|prompt_user_then_kill)
                       button=$(displaydialog "Quit “$x” to continue updating? $([[ -n $appNewVersion ]] && echo "Version $appversion is installed, but version $appNewVersion is available.") (Leave this dialogue if you want to activate this update later)." "The application “$x” needs to be updated.")
                       if [[ $button = "Not Now" ]]; then
+                        # MIM: This is NOT an error (changed exitcode 10 to 0 and ERROR to REG)
                         appClosed=0
-                        cleanupAndExit 10 "user aborted update" ERROR
+                        cleanupAndExit 0 "user aborted update" REG
                       elif [[ $button = "" ]]; then
                         appClosed=0
                         cleanupAndExit 25 "timed out waiting for user response" ERROR
